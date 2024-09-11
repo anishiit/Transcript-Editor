@@ -2,10 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Play, Pause, RotateCcw } from 'lucide-react'
 
-const defaultTranscript = [
-  { word: 'No', start_time: 0, duration: 300 },
-  { word: 'transcript', start_time: 300, duration: 500 },
-  { word: 'provided', start_time: 800, duration: 400 },
+const defaultTranscript =[
+  { "word": "Hello", "start_time": 0, "duration": 500 },
+  { "word": "world", "start_time": 500, "duration": 700 },
+  { "word": "This", "start_time": 1200, "duration": 300 },
+  { "word": "is", "start_time": 1500, "duration": 200 },
+  { "word": "a", "start_time": 1700, "duration": 100 },
+  { "word": "test", "start_time": 1800, "duration": 400 }
 ]
 export default function Component({ initialTranscript= defaultTranscript}) {
   const [transcript, setTranscript] = useState(initialTranscript)

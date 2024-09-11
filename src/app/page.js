@@ -1,101 +1,142 @@
-import Image from "next/image";
+"use client"
+import React, { useState, useEffect, useRef } from 'react'
+import { Play, Pause, RotateCcw } from 'lucide-react'
 
-export default function Home() {
+const defaultTranscript = [
+  { word: 'No', start_time: 0, duration: 300 },
+  { word: 'transcript', start_time: 300, duration: 500 },
+  { word: 'provided', start_time: 800, duration: 400 },
+]
+export default function Component({ initialTranscript= defaultTranscript}) {
+  const [transcript, setTranscript] = useState(initialTranscript)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [editingIndex, setEditingIndex] = useState(null)
+  const intervalRef = useRef(null)
+  const totalDuration = (transcript || []).reduce((sum, word) => sum + word.duration, 0);
+
+
+  useEffect(() => {
+    if (isPlaying) {
+      intervalRef.current = window.setInterval(() => {
+        setCurrentTime((prevTime) => {
+          if (prevTime >= totalDuration) {
+            setIsPlaying(false)
+            return totalDuration
+          }
+          return prevTime + 100
+        })
+      }, 100)
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
+  }, [isPlaying, totalDuration])
+
+  const togglePlayback = () => {
+    if (currentTime >= totalDuration) {
+      setCurrentTime(0)
+    }
+    setIsPlaying(!isPlaying)
+  }
+
+  const resetPlayback = () => {
+    setIsPlaying(false)
+    setCurrentTime(0)
+  }
+
+  const handleWordClick = (index) => {
+    setEditingIndex(index)
+  }
+
+  const handleWordEdit = (index, newWord) => {
+    const updatedTranscript = [...transcript]
+    updatedTranscript[index].word = newWord
+    setTranscript(updatedTranscript)
+    setEditingIndex(null)
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white shadow-xl rounded-lg overflow-hidden">
+          <div className="p-6">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Transcript Editor</h1>
+            <div className="mb-6 flex justify-center space-x-4">
+              <button
+                onClick={togglePlayback}
+                className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                aria-label={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+              </button>
+              <button
+                onClick={resetPlayback}
+                className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                aria-label="Reset"
+              >
+                <RotateCcw className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-2 text-lg text-black ">
+              {(transcript || []).map((word, index) => (
+                <Word
+                  key={index}
+                  word={word}
+                  isHighlighted={currentTime >= word.start_time && currentTime < word.start_time + word.duration}
+                  isEditing={editingIndex === index}
+                  onClick={() => handleWordClick(index)}
+                  onEdit={(newWord) => handleWordEdit(index, newWord)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
-  );
+  )
+}
+
+
+
+function Word({ word, isHighlighted, isEditing, onClick, onEdit }) {
+  const [editedWord, setEditedWord] = useState(word.word)
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      onEdit(editedWord)
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <input
+        type="text"
+        value={editedWord}
+        onChange={(e) => setEditedWord(e.target.value)}
+        onBlur={() => onEdit(editedWord)}
+        onKeyDown={handleKeyDown}
+        className="px-1 py-0.5 border-b-2 border-blue-500 focus:outline-none focus:border-blue-700 bg-blue-50 rounded"
+        autoFocus
+      />
+    )
+  }
+
+  return (
+    <span
+      onClick={onClick}
+      className={`cursor-pointer px-1 py-0.5 rounded transition-colors duration-200 ease-in-out ${
+        isHighlighted ? 'bg-yellow-200' : 'hover:bg-gray-100'
+      }`}
+    >
+      {word.word}
+    </span>
+  )
 }
